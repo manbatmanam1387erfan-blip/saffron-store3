@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>فروشگاه زعفران آنلاین</title>
+  <meta name="description" content="فروشگاه زعفران با طراحی پاستلی و مدرن.">
+  <style>
+    :root{
+      --bg:#fff;
+      --card:#f8f8f8;
+      --accent:#f4a261;
+      --muted:#555;
+      --radius:12px;
+      --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial;background:var(--bg);color:#222;padding:16px;display:flex;justify-content:center;}
+    .app{width:100%;max-width:var(--maxw)}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+    h1{font-size:22px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:14px}
+    main{display:grid;grid-template-columns:1fr 360px;gap:20px}
+
+    .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+    .card{background:var(--card);padding:14px;border-radius:var(--radius);box-shadow:0 4px 10px rgba(0,0,0,0.08);}
+    .p-image{height:140px;border-radius:10px;background-size:cover;background-position:center;margin-bottom:10px}
+    .p-title{font-weight:700;margin:0 0 6px}
+    .p-desc{font-size:13px;color:var(--muted);margin:0 0 8px}
+    .p-footer{display:flex;align-items:center;justify-content:space-between}
+    .price{font-weight:800;color:var(--accent)}
+    button{background:var(--accent);border:0;color:#fff;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(0,0,0,0.1);color:var(--muted)}
+
+    aside .card{position:sticky;top:16px}
+    .cart-list{max-height:320px;overflow:auto;margin-bottom:12px}
+    .cart-item{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;background:rgba(244,162,97,0.1);margin-bottom:8px}
+    .cart-item img{width:56px;height:48px;object-fit:cover;border-radius:8px}
+    .qty{display:flex;align-items:center;gap:6px}
+
+    .admin-bar{display:flex;gap:8px;align-items:center}
+    .chip{background:rgba(244,162,97,0.2);padding:6px 10px;border-radius:9px;font-size:13px}
+
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);}
+    .modal.open{display:flex}
+    .modal .card{width:420px;background:#fff;color:#222;padding:16px;border-radius:12px}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input,textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;background:transparent;color:inherit}
+
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+
+    @media(max-width:980px){main{grid-template-columns:1fr} aside{order:-1;margin-bottom:12px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">زع</div>
+      <div>
+        <h1>زعفران آنلاین</h1>
+        <p class="lead" id="shopDesc">زعفران ارگانیک — بسته‌بندی زیبا — ارسال سریع</p>
+      </div>
+    </div>
+    <div class="admin-bar">
+      <div class="chip" id="shopStatus">وضعیت فروش: باز</div>
+      <button id="btnAdmin">پنل مدیر</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2 style="margin:0">محصولات</h2>
+        <input id="search" placeholder="جستجو در محصولات" style="padding:8px;border-radius:10px;border:1px solid #ccc;width:160px">
+      </div>
+      <div class="products card" id="products"></div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h3 style="margin-top:0">سبد خرید</h3>
+        <div class="cart-list" id="cartList"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="color:var(--muted)">جمع</div>
+          <div id="total" style="font-weight:800">0 تومان</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="checkout">تکمیل خرید</button>
+          <button id="clearCart" class="ghost">پاک کردن</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    ساخته‌شده با ❤️ — نسخه آفلاین و قابل ویرایش
+  </footer>
+</div>
+
+<div id="modal" class="modal">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <strong id="modalTitle">پنل مدیریت</strong>
+      <button id="closeModal" class="ghost">بستن</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_DATA = {
+  shopOpen:true,
+  shopDesc:'زعفران ارگانیک — بسته‌بندی زیبا — ارسال سریع',
+  products:[
+    {id:'p1',title:'زعفران درجه یک ۱ گرم',price:120000,desc:'زعفران خالص',img:'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?q=80&w=800'},
+    {id:'p2',title:'زعفران پوشال ۰.۵ گرم',price:70000,desc:'بسته‌بندی لوکس',img:'https://images.unsplash.com/photo-1600180758895-5fb01b3d7f4f?q=80&w=800'}
+  ]
+};
+
+const productsEl=document.getElementById('products');
+const cartList=document.getElementById('cartList');
+const totalEl=document.getElementById('total');
+const shopStatus=document.getElementById('shopStatus');
+const shopDescEl=document.getElementById('shopDesc');
+const modal=document.getElementById('modal');
+const modalBody=document.getElementById('modalBody');
+const modalTitle=document.getElementById('modalTitle');
+const btnAdmin=document.getElementById('btnAdmin');
+const searchInput=document.getElementById('search');
+
+let DATA=JSON.parse(localStorage.getItem('saffron_data')||JSON.stringify(DEFAULT_DATA));
+let CART=JSON.parse(localStorage.getItem('saffron_cart')||'[]');
+
+function formatPrice(n){return n.toLocaleString('fa-IR')+' تومان';}
+
+function renderProducts(filter=''){
+  let list=DATA.products.filter(p=>(p.title+p.desc).toLowerCase().includes(filter.toLowerCase()));
+  productsEl.innerHTML='';
+  if(list.length===0){productsEl.innerHTML='<div class="card">هیچ محصولی یافت نشد.</div>';return;}
+  list.forEach(p=>{
+    const div=document.createElement('div'); div.className='card';
+    div.innerHTML=`
+      <div class="p-image" style="background-image:url('${p.img}')"></div>
+      <div class="p-title">${p.title}</div>
+      <div class="p-desc">${p.desc}</div>
+      <div class="p-footer">
+        <div class="price">${formatPrice(p.price)}</div>
+        <div>
+          <button data-id="${p.id}" class="add">افزودن</button>
+        </div>
+      </div>
+    `;
+    productsEl.appendChild(div);
+  });
+  productsEl.querySelectorAll('button.add').forEach(b=>b.addEventListener('click',e=>addToCart(e.target.dataset.id)));
+}
+
+function saveCart(){localStorage.setItem('saffron_cart',JSON.stringify(CART));}
+function saveData(){localStorage.setItem('saffron_data',JSON.stringify(DATA)); renderProducts(searchInput.value); renderShopStatus(); shopDescEl.innerText=DATA.shopDesc;}
+function addToCart(id){
+  const prod=DATA.products.find(x=>x.id===id); if(!prod) return;
+  const existing=CART.find(i=>i.id===id);
+  if(existing) existing.qty++;
+  else CART.push({id:prod.id,title:prod.title,price:prod.price,img:prod.img,qty:1});
+  saveCart(); renderCart();
+}
+
+function renderCart(){
+  cartList.innerHTML=''; if(CART.length===0){cartList.innerHTML='<div style="color:#555">سبد خرید خالی است.</div>'; totalEl.innerText='0 تومان'; return;}
+  let sum=0;
+  CART.forEach(it=>{
+    sum+=it.price*it.qty;
+    const div=document.createElement('div'); div.className='cart-item';
+    div.innerHTML=`
+      <img src="${it.img}" alt="">
+      <div style="flex:1">
+        <div style="font-weight:700">${it.title}</div>
+        <div style="color:#555;font-size:13px">${formatPrice(it.price)}</div>
+      </div>
+      <div class="qty">
+        <button data-id="${it.id}" class="minus ghost">−</button>
+        <div>${it.qty}</div>
+        <button data-id="${it.id}" class="plus">＋</button>
+      </div>
+    `;
+    cartList.appendChild(div);
+  });
+  totalEl.innerText=formatPrice(sum);
+  cartList.querySelectorAll('button.plus').forEach(b=>b.addEventListener('click',e=>changeQty(e.target.dataset.id,1)));
+  cartList.querySelectorAll('button.minus').forEach(b=>b.addEventListener('click',e=>changeQty(e.target.dataset.id,-1)));
+}
+function changeQty(id,delta){const it=CART.find(x=>x.id===id);if(!it)return;it.qty+=delta;if(it.qty<=0)CART=CART.filter(x=>x.id!==id);saveCart();renderCart();}
+
+document.getElementById('clearCart').addEventListener('click',()=>{CART=[];saveCart();renderCart();});
+document.getElementById('checkout').addEventListener('click',()=>{
+  if(CART.length===0) return alert('سبد خرید خالی است.');
+  const name=prompt('نام گیرنده:'); if(!name)return alert('خرید لغو شد');
+  const phone=prompt('شماره تماس:'); if(!phone)return alert('خرید لغو شد');
+  alert('سفارش شما ثبت شد (شبیه‌سازی)');
+  CART=[];saveCart();renderCart();
+});
+
+searchInput.addEventListener('input',e=>renderProducts(e.target.value));
+
+function renderShopStatus(){shopStatus.innerText='وضعیت فروش: '+(DATA.shopOpen?'باز':'بسته');}
+
+btnAdmin.addEventListener('click',()=>{
+  modalBody.innerHTML=`
+    <label>وضعیت فروشگاه</label>
+    <select id="shopOpen">
+      <option value="1" ${DATA.shopOpen?'selected':''}>باز</option>
+      <option value="0" ${!DATA.shopOpen?'selected':''}>بسته</option>
+    </select>
+    <label>توضیحات فروشگاه</label>
+    <input id="shopDescInput" value="${DATA.shopDesc}">
+    <h4>محصولات</h4>
+    <div id="adminProducts"></div>
+    <button id="addProduct">افزودن محصول جدید</button>
+    <button id="saveAdmin" style="margin-top:12px">ذخیره تغییرات</button>
+  `;
+  renderAdminProducts();
+  modal.classList.add('open');
+
+  document.getElementById('shopOpen').addEventListener('change',e=>{DATA.shopOpen=e.target.value==='1'; renderShopStatus();});
+  document.getElementById('shopDescInput').addEventListener('input',e=>DATA.shopDesc=e.target.value);
+  document.getElementById('saveAdmin').addEventListener('click',()=>{saveData();modal.classList.remove('open');});
+  document.getElementById('addProduct').addEventListener('click',()=>{
+    const id='p'+Date.now();
+    DATA.products.push({id,title:'محصول جدید',desc:'توضیحات',price:0,img:'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?q=80&w=800'});
+    renderAdminProducts();
+  });
+});
+
+function renderAdminProducts(){
+  const adminProducts=document.getElementById('adminProducts');
+  adminProducts.innerHTML='';
+  DATA.products.forEach(p=>{
+    const div=document.createElement('div'); div.style.marginBottom='8px';
+    div.innerHTML=`
+      <input data-id="${p.id}" class="adminTitle" value="${p.title}" placeholder="عنوان">
+      <input data-id="${p.id}" class="adminDesc" value="${p.desc}" placeholder="توضیحات">
+      <input data-id="${p.id}" class="adminPrice" value="${p.price}" placeholder="قیمت" type="number">
+      <input data-id="${p.id}" class="adminImg" value="${p.img}" placeholder="آدرس تصویر">
+      <button data-id="${p.id}" class="delProduct ghost">حذف</button>
+    `;
+    adminProducts.appendChild(div);
+  });
+  adminProducts.querySelectorAll('.adminTitle').forEach(inp=>inp.addEventListener('input',e=>{const p=DATA.products.find(x=>x.id===e.target.dataset.id);p.title=e.target.value;}));
+  adminProducts.querySelectorAll('.adminDesc').forEach(inp=>inp.addEventListener('input',e=>{const p=DATA.products.find(x=>x.id===e.target.dataset.id);p.desc=e.target.value;}));
+  adminProducts.querySelectorAll('.adminPrice').forEach(inp=>inp.addEventListener('input',e=>{const p=DATA.products.find(x=>x.id===e.target.dataset.id);p.price=parseInt(e.target.value)||0;}));
+  adminProducts.querySelectorAll('.adminImg').forEach(inp=>inp.addEventListener('input',e=>{const p=DATA.products.find(x=>x.id===e.target.dataset.id);p.img=e.target.value;}));
+  adminProducts.querySelectorAll('.delProduct').forEach(b=>b.addEventListener('click',e=>{DATA.products=DATA.products.filter(x=>x.id!==e.target.dataset.id);renderAdminProducts();}));
+}
+
+document.getElementById('closeModal').addEventListener('click',()=>modal.classList.remove('open'));
+
+function init(){renderProducts();renderCart();renderShopStatus();shopDescEl.innerText=DATA.shopDesc;}
+init();
+window.addEventListener('keydown',e=>{if(e.key==='Escape') modal.classList.remove('open');});
+</script>
+</body>
+</html>
